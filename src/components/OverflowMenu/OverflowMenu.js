@@ -20,10 +20,13 @@ import FloatingMenu, {
 import OptimizedResize from '../../internal/OptimizedResize';
 import Icon from '../Icon';
 import OverflowMenuVertical16 from '@carbon/icons-react/lib/overflow-menu--vertical/16';
-import { componentsX } from '../../internal/FeatureFlags';
+import { breakingChangesX, componentsX } from '../../internal/FeatureFlags';
 import { keys, matches as keyCodeMatches } from '../../tools/key';
+import mergeRefs from '../../tools/mergeRefs';
 
 const { prefix } = settings;
+
+let didWarnAboutDeprecation = false;
 
 const matchesFuncName =
   typeof Element !== 'undefined' &&
@@ -37,9 +40,15 @@ const matchesFuncName =
  * @returns {boolean} `true` if the given DOM element is a element node and matches the given selector.
  * @private
  */
-const matches = (elem, selector) =>
-  typeof elem[matchesFuncName] === 'function' &&
-  elem[matchesFuncName](selector);
+const matches = (elem, selector) => {
+  if (breakingChangesX) {
+    return elem.matches(selector);
+  }
+  return (
+    typeof elem[matchesFuncName] === 'function' &&
+    elem[matchesFuncName](selector)
+  );
+};
 
 const on = (element, ...args) => {
   element.addEventListener(...args);
@@ -58,6 +67,9 @@ const on = (element, ...args) => {
  * @private
  */
 const closest = (elem, selector) => {
+  if (breakingChangesX) {
+    return elem.closest(selector);
+  }
   const doc = elem.ownerDocument;
   for (
     let traverse = elem;
@@ -139,7 +151,8 @@ export const getMenuOffset = (menuBody, direction, trigger, flip) => {
     switch (triggerButtonPositionProp) {
       case 'top':
       case 'bottom': {
-        const triggerWidth = trigger.offsetWidth;
+        // TODO: Ensure `trigger` is there for `<OverflowMenu open>`
+        const triggerWidth = !trigger ? 0 : trigger.offsetWidth;
         return {
           left: (!flip ? 1 : -1) * (menuWidth / 2 - triggerWidth / 2),
           top: 0,
@@ -147,7 +160,8 @@ export const getMenuOffset = (menuBody, direction, trigger, flip) => {
       }
       case 'left':
       case 'right': {
-        const triggerHeight = trigger.offsetHeight;
+        // TODO: Ensure `trigger` is there for `<OverflowMenu open>`
+        const triggerHeight = !trigger ? 0 : trigger.offsetHeight;
         return {
           left: 0,
           top: (!flip ? 1 : -1) * (menuHeight / 2 - triggerHeight / 2),
@@ -160,7 +174,7 @@ export const getMenuOffset = (menuBody, direction, trigger, flip) => {
   }
 };
 
-export default class OverflowMenu extends Component {
+class OverflowMenu extends Component {
   state = {};
 
   static propTypes = {
@@ -275,7 +289,7 @@ export default class OverflowMenu extends Component {
     /**
      * Function called to override icon rendering.
      */
-    renderIcon: PropTypes.func,
+    renderIcon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
 
     /**
      * Function called when menu is closed
@@ -295,6 +309,7 @@ export default class OverflowMenu extends Component {
     direction: DIRECTION_BOTTOM,
     flipped: false,
     floatingMenu: false,
+    renderIcon: !componentsX ? undefined : OverflowMenuVertical16,
     onClick: () => {},
     onKeyDown: () => {},
     onClose: () => {},
@@ -350,7 +365,8 @@ export default class OverflowMenu extends Component {
   };
 
   componentDidUpdate() {
-    const { onClose, onOpen, floatingMenu } = this.props;
+    const { onClose, onOpen, floatingMenu: origFloatingMenu } = this.props;
+    const floatingMenu = !!breakingChangesX || origFloatingMenu;
 
     if (this.state.open) {
       if (!floatingMenu) {
@@ -433,7 +449,8 @@ export default class OverflowMenu extends Component {
    * https://reactjs.org/docs/events.html#event-pooling
    */
   handleBlur = evt => {
-    if (this.props.floatingMenu) {
+    const floatingMenu = !!breakingChangesX || this.props.floatingMenu;
+    if (floatingMenu) {
       return;
     }
     evt.persist();
@@ -485,16 +502,17 @@ export default class OverflowMenu extends Component {
   };
 
   /**
-   * Handles the floating menu being unmounted.
+   * Handles the floating menu being unmounted or non-floating menu being
+   * mounted or unmounted.
    * @param {Element} menuBody The DOM element of the menu body.
    * @private
    */
   _bindMenuBody = menuBody => {
-    if (!menuBody) {
+    if (!this.props.floatingMenu || !menuBody) {
       this._menuBody = menuBody;
-      if (this._hFocusIn) {
-        this._hFocusIn = this._hFocusIn.release();
-      }
+    }
+    if (!menuBody && this._hFocusIn) {
+      this._hFocusIn = this._hFocusIn.release();
     }
   };
 
@@ -551,15 +569,17 @@ export default class OverflowMenu extends Component {
       iconName,
       direction,
       flipped,
-      floatingMenu,
+      floatingMenu: origFloatingMenu,
       menuOffset,
       menuOffsetFlip,
       iconClass,
       onClick, // eslint-disable-line
       onOpen, // eslint-disable-line
-      renderIcon,
+      renderIcon: IconElement,
+      innerRef: ref,
       ...other
     } = this.props;
+    const floatingMenu = !!breakingChangesX || origFloatingMenu;
 
     if (__DEV__) {
       warning(
@@ -567,6 +587,19 @@ export default class OverflowMenu extends Component {
         '[OverflowMenu] menu direction other than `bottom` is only supporting with `floatingMenu` option. Received: `%s`',
         direction
       );
+      warning(
+        floatingMenu,
+        '[OverflowMenu] non-floating option has been deprecated.'
+      );
+    }
+
+    if (__DEV__ && breakingChangesX && (icon || iconName)) {
+      warning(
+        didWarnAboutDeprecation,
+        'The `icon`/`iconName` properties in the `OverflowMenu` component is being removed in the next release of ' +
+          '`carbon-components-react`. Please use `renderIcon` instead.'
+      );
+      didWarnAboutDeprecation = true;
     }
 
     const { open } = this.state;
@@ -639,24 +672,22 @@ export default class OverflowMenu extends Component {
       onClick: this.handleClick,
       onKeyDown: this.handleKeyDown,
       className: overflowMenuIconClasses,
-      description: iconDescription,
+      [IconElement ? 'aria-label' : 'description']: iconDescription,
       focusable: 'false', // Prevent `<svg>` in trigger icon from getting focus for IE11
     };
 
     const overflowMenuIcon = (() => {
-      if (renderIcon) {
-        return renderIcon(iconProps);
-      }
-      if (!componentsX) {
-        return (
-          <Icon
-            {...iconProps}
-            icon={!icon && !iconName ? iconOverflowMenu : icon}
-            name={iconName}
-          />
-        );
-      }
-      return <OverflowMenuVertical16 {...iconProps} />;
+      return IconElement ? (
+        <IconElement {...iconProps}>
+          {iconDescription && <title>{iconDescription}</title>}
+        </IconElement>
+      ) : (
+        <Icon
+          {...iconProps}
+          icon={!icon && !iconName ? iconOverflowMenu : icon}
+          name={iconName}
+        />
+      );
     })();
 
     return (
@@ -673,7 +704,7 @@ export default class OverflowMenu extends Component {
           aria-label={ariaLabel}
           id={id}
           tabIndex={tabIndex}
-          ref={this.bindMenuEl}>
+          ref={mergeRefs(ref, this.bindMenuEl)}>
           {overflowMenuIcon}
           {open && wrappedMenuBody}
         </div>
@@ -681,3 +712,13 @@ export default class OverflowMenu extends Component {
     );
   }
 }
+
+export default (!breakingChangesX
+  ? OverflowMenu
+  : (() => {
+      const forwardRef = (props, ref) => (
+        <OverflowMenu {...props} innerRef={ref} />
+      );
+      forwardRef.displayName = 'OverflowMenu';
+      return React.forwardRef(forwardRef);
+    })());

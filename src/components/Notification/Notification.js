@@ -8,6 +8,7 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import classNames from 'classnames';
+import warning from 'warning';
 import {
   iconClose,
   iconCheckmarkSolid,
@@ -17,16 +18,16 @@ import {
 } from 'carbon-icons';
 import { settings } from 'carbon-components';
 import Icon from '../Icon';
-// temporary workaround for a11y warning icon. TODO: for @carbon/icons-, https://github.com/carbon-design-system/carbon-website/issues/797
 import a11yIconWarningSolid from './a11yIconWarningSolid';
 import Close16 from '@carbon/icons-react/lib/close/16';
-import ErrorFilled16 from '@carbon/icons-react/lib/error--filled/16';
-import CheckmarkFilled16 from '@carbon/icons-react/lib/checkmark--filled/16';
-import InformationFilled16 from '@carbon/icons-react/lib/information--filled/16';
-import WarningAltFilled16 from '@carbon/icons-react/lib/warning--alt--filled/16';
-import { componentsX } from '../../internal/FeatureFlags';
+import ErrorFilled20 from '@carbon/icons-react/lib/error--filled/20';
+import CheckmarkFilled20 from '@carbon/icons-react/lib/checkmark--filled/20';
+import WarningFilled20 from '@carbon/icons-react/lib/warning--filled/20';
+import { breakingChangesX, componentsX } from '../../internal/FeatureFlags';
 
 const { prefix } = settings;
+
+let didWarnAboutDeprecationButtonIcon = false;
 
 export class NotificationButton extends Component {
   static propTypes = {
@@ -62,6 +63,12 @@ export class NotificationButton extends Component {
     }),
 
     /**
+     * Optional prop to allow overriding the icon rendering.
+     * Can be a React component class
+     */
+    renderIcon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+
+    /**
      * Specify an optional icon for the Button through a string,
      * if something but regular "close" icon is desirable
      */
@@ -78,6 +85,7 @@ export class NotificationButton extends Component {
     notificationType: 'toast',
     type: 'button',
     iconDescription: 'close icon',
+    renderIcon: !componentsX ? undefined : Close16,
   };
 
   render() {
@@ -87,10 +95,20 @@ export class NotificationButton extends Component {
       iconDescription,
       type,
       icon,
+      renderIcon: IconTag,
       name,
       notificationType,
       ...other
     } = this.props;
+
+    if (__DEV__ && breakingChangesX && (icon || name)) {
+      warning(
+        didWarnAboutDeprecationButtonIcon,
+        'The `icon`/`name` properties in the `NotificationButton` component is being removed in the next release of ' +
+          '`carbon-components-react`. Please use `renderIcon` instead.'
+      );
+      didWarnAboutDeprecationButtonIcon = true;
+    }
 
     const buttonClasses = classNames(
       {
@@ -110,18 +128,16 @@ export class NotificationButton extends Component {
     });
 
     const NotificationButtonIcon = (() => {
-      if (componentsX) {
-        const IconTag = icon || Close16;
+      if (Object(IconTag) === IconTag) {
         return (
           <IconTag
             aria-label={iconDescription}
             className={iconClasses}
-            icon={!icon && !name ? iconClose : icon}
             name={name}
           />
         );
       }
-      if (!componentsX) {
+      if (!breakingChangesX) {
         return (
           <Icon
             description={iconDescription}
@@ -136,7 +152,11 @@ export class NotificationButton extends Component {
     })();
 
     return (
-      <button {...other} type={type} className={buttonClasses}>
+      <button
+        {...other}
+        type={type}
+        title={iconDescription}
+        className={buttonClasses}>
         {NotificationButtonIcon}
       </button>
     );
@@ -206,6 +226,44 @@ export class NotificationTextDetails extends Component {
     }
   }
 }
+
+const useIcon = kindProp =>
+  ({
+    error: componentsX ? ErrorFilled20 : iconErrorSolid,
+    success: componentsX ? CheckmarkFilled20 : iconCheckmarkSolid,
+    warning: componentsX ? WarningFilled20 : iconWarningSolid,
+    info: componentsX ? null : iconInfoSolid,
+  }[kindProp]);
+
+const NotificationIcon = ({ notificationType, kind, iconDescription }) => {
+  if (!componentsX) {
+    if (notificationType === 'inline') {
+      switch (kind) {
+        case 'warning':
+          return a11yIconWarningSolid(prefix, notificationType);
+        default:
+          return (
+            <Icon
+              description={iconDescription}
+              className={`${prefix}--inline-notification__icon`}
+              aria-label="close"
+              icon={useIcon(kind)}
+            />
+          );
+      }
+    }
+    return null;
+  }
+  const NotificationIconX = useIcon(kind);
+  return (
+    NotificationIconX && (
+      <NotificationIconX
+        className={`${prefix}--${notificationType}-notification__icon`}>
+        <title>{iconDescription}</title>
+      </NotificationIconX>
+    )
+  );
+};
 
 export class ToastNotification extends Component {
   static propTypes = {
@@ -302,14 +360,6 @@ export class ToastNotification extends Component {
     this.props.onCloseButtonClick(evt);
   };
 
-  useIcon = kindProp =>
-    ({
-      error: iconErrorSolid,
-      success: iconCheckmarkSolid,
-      warning: iconWarningSolid,
-      info: iconInfoSolid,
-    }[kindProp]);
-
   render() {
     if (!this.state.open) {
       return null;
@@ -339,6 +389,11 @@ export class ToastNotification extends Component {
 
     return (
       <div {...other} role={role} kind={kind} className={classes}>
+        <NotificationIcon
+          notificationType={notificationType}
+          kind={kind}
+          iconDescription={iconDescription}
+        />
         <NotificationTextDetails
           title={title}
           subtitle={subtitle}
@@ -430,14 +485,6 @@ export class InlineNotification extends Component {
     this.props.onCloseButtonClick(evt);
   };
 
-  useIcon = kindProp =>
-    ({
-      error: componentsX ? ErrorFilled16 : iconErrorSolid,
-      success: componentsX ? CheckmarkFilled16 : iconCheckmarkSolid,
-      warning: componentsX ? WarningAltFilled16 : iconWarningSolid,
-      info: componentsX ? InformationFilled16 : iconInfoSolid,
-    }[kindProp]);
-
   render() {
     if (!this.state.open) {
       return null;
@@ -464,34 +511,14 @@ export class InlineNotification extends Component {
       className
     );
 
-    const NotificationIcon = kind => {
-      if (componentsX) {
-        const NotificationIconX = this.useIcon(kind);
-        return (
-          <NotificationIconX
-            className={`${prefix}--inline-notification__icon`}
-          />
-        );
-      }
-      switch (kind) {
-        case 'warning':
-          return a11yIconWarningSolid(prefix, notificationType);
-        default:
-          return (
-            <Icon
-              description={this.props.iconDescription}
-              className={`${prefix}--inline-notification__icon`}
-              aria-label="close"
-              icon={this.useIcon(kind)}
-            />
-          );
-      }
-    };
-
     return (
       <div {...other} role={role} kind={kind} className={classes}>
         <div className={`${prefix}--inline-notification__details`}>
-          {NotificationIcon(kind)}
+          <NotificationIcon
+            notificationType={notificationType}
+            kind={kind}
+            iconDescription={iconDescription}
+          />
           <NotificationTextDetails
             title={title}
             subtitle={subtitle}
@@ -511,9 +538,10 @@ export class InlineNotification extends Component {
   }
 }
 
-// Deprecated
+let didWarnAboutDeprecationNotification = false;
 
-export default class Notification extends Component {
+// Deprecated
+class Notification extends Component {
   static propTypes = {
     children: PropTypes.node,
 
@@ -584,6 +612,15 @@ export default class Notification extends Component {
     }[kindProp]);
 
   render() {
+    if (__DEV__) {
+      warning(
+        didWarnAboutDeprecationNotification,
+        'The `Notification` component is being removed in the next release of ' +
+          '`carbon-components-react`. Please use `InlineNotification` or `ToastNotification` instead.'
+      );
+      didWarnAboutDeprecationNotification = true;
+    }
+
     if (!this.state.open) {
       return null;
     }
@@ -671,3 +708,5 @@ export default class Notification extends Component {
     return caption ? toastHTML : inlineHTML;
   }
 }
+
+export default (!breakingChangesX ? Notification : null);
