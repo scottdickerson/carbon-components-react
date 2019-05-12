@@ -10,8 +10,6 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 import { settings } from 'carbon-components';
 import Calendar16 from '@carbon/icons-react/lib/calendar/16';
-import Icon from '../Icon';
-import { componentsX } from '../../internal/FeatureFlags';
 
 const { prefix } = settings;
 
@@ -26,6 +24,12 @@ export default class DatePickerInput extends Component {
      * The description of the calendar icon.
      */
     iconDescription: PropTypes.string,
+
+    /**
+     * Provide the text that will be read by a screen reader when visiting this
+     * control
+     */
+    labelText: PropTypes.node.isRequired,
   };
 
   static defaultProps = {
@@ -33,7 +37,6 @@ export default class DatePickerInput extends Component {
     type: 'text',
     disabled: false,
     invalid: false,
-    labelText: '',
     onClick: () => {},
     onChange: () => {},
   };
@@ -80,31 +83,17 @@ export default class DatePickerInput extends Component {
     });
 
     const datePickerIcon = (() => {
-      if (!componentsX && datePickerType !== 'single') {
+      if (datePickerType === 'simple') {
         return;
-      }
-      if (componentsX && datePickerType === 'simple') {
-        return;
-      }
-      if (componentsX) {
-        return (
-          <Calendar16
-            className={`${prefix}--date-picker__icon`}
-            aria-label={iconDescription}
-            onClick={openCalendar}
-            role="img">
-            {iconDescription && <title>{iconDescription}</title>}
-          </Calendar16>
-        );
       }
       return (
-        <Icon
-          name="calendar"
+        <Calendar16
           className={`${prefix}--date-picker__icon`}
-          description={iconDescription}
+          aria-label={iconDescription}
           onClick={openCalendar}
-          focusable="false"
-        />
+          role="img">
+          {iconDescription && <title>{iconDescription}</title>}
+        </Calendar16>
       );
     })();
 
@@ -147,21 +136,11 @@ export default class DatePickerInput extends Component {
 
     return (
       <div className={containerClasses}>
-        {componentsX ? (
-          <>
-            {label}
-            <div className={`${prefix}--date-picker-input__wrapper`}>
-              {input}
-              {datePickerIcon}
-            </div>
-          </>
-        ) : (
-          <>
-            {datePickerIcon}
-            {label}
-            {input}
-          </>
-        )}
+        {label}
+        <div className={`${prefix}--date-picker-input__wrapper`}>
+          {input}
+          {datePickerIcon}
+        </div>
         {error}
       </div>
     );

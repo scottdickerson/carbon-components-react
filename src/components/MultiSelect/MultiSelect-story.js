@@ -8,7 +8,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
-
 import {
   withKnobs,
   boolean,
@@ -22,12 +21,25 @@ import MultiSelect from '../MultiSelect';
 
 const items = [
   {
-    id: 'item-1',
-    text: 'Item 1',
+    id: 'downshift-1-item-0',
+    text: 'Option 1',
   },
   {
-    id: 'item-2',
-    text: 'Item 2',
+    id: 'downshift-1-item-1',
+    text: 'Option 2',
+  },
+  {
+    id: 'downshift-1-item-2',
+    text: 'Option 3',
+  },
+  {
+    id: 'downshift-1-item-3',
+    text: 'Option 4',
+  },
+  {
+    id: 'downshift-1-item-4',
+    text:
+      'An example option that is really long to show what should be done to handle long text',
   },
 ];
 
@@ -40,6 +52,9 @@ const types = {
 };
 
 const props = () => ({
+  id: text('MultiSelect ID (id)', 'carbon-multiselect-example'),
+  titleText: text('Title (titleText)', 'Multiselect title'),
+  helperText: text('Helper text (helperText)', 'This is not helper text'),
   filterable: boolean(
     'Filterable (`<MultiSelect.Filterable>` instead of `<MultiSelect>`)',
     false
@@ -62,6 +77,11 @@ const props = () => ({
       'open.menu': 'Open menu',
     }
   ),
+  selectionFeedback: select(
+    'Selection feedback',
+    ['top', 'fixed', 'top-after-reopen'],
+    'top-after-reopen'
+  ),
 });
 
 storiesOf('MultiSelect', module)
@@ -72,6 +92,7 @@ storiesOf('MultiSelect', module)
       const {
         filterable,
         listBoxMenuIconTranslationIds,
+        selectionFeedback,
         ...multiSelectProps
       } = props();
       const ComponentToUse = !filterable ? MultiSelect : MultiSelect.Filterable;
@@ -84,6 +105,7 @@ storiesOf('MultiSelect', module)
             itemToString={item => (item ? item.text : '')}
             placeholder={placeholder}
             translateWithId={id => listBoxMenuIconTranslationIds[id]}
+            selectionFeedback={selectionFeedback}
           />
         </div>
       );
@@ -102,6 +124,7 @@ storiesOf('MultiSelect', module)
       const {
         filterable,
         listBoxMenuIconTranslationIds,
+        selectionFeedback,
         ...multiSelectProps
       } = props();
       const ComponentToUse = !filterable ? MultiSelect : MultiSelect.Filterable;
@@ -116,6 +139,7 @@ storiesOf('MultiSelect', module)
             initialSelectedItems={[items[0], items[1]]}
             placeholder={placeholder}
             translateWithId={id => listBoxMenuIconTranslationIds[id]}
+            selectionFeedback={selectionFeedback}
           />
         </div>
       );

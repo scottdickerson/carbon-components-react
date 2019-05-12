@@ -8,21 +8,12 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import classNames from 'classnames';
-import { iconClose } from 'carbon-icons';
-import Icon from '../Icon';
 import Button from '../Button';
 import { settings } from 'carbon-components';
 import Close20 from '@carbon/icons-react/lib/close/20';
-import { breakingChangesX, componentsX } from '../../internal/FeatureFlags';
 import FocusTrap from 'focus-trap-react';
 
 const { prefix } = settings;
-
-const matchesFuncName =
-  typeof Element !== 'undefined' &&
-  ['matches', 'webkitMatchesSelector', 'msMatchesSelector'].filter(
-    name => typeof Element.prototype[name] === 'function'
-  )[0];
 
 export default class Modal extends Component {
   static propTypes = {
@@ -55,7 +46,8 @@ export default class Modal extends Component {
     /**
      * Specify the content of the modal header title.
      */
-    modalHeading: PropTypes.string,
+    modalHeading: PropTypes.node,
+
     /**
      * Specify the content of the modal header label.
      */
@@ -128,8 +120,8 @@ export default class Modal extends Component {
     selectorPrimaryFocus: PropTypes.string,
 
     /**
-     * Specify whether the modal should be a focus trap. NOTE: by default
-     * this is true
+     * Specify whether the modal should use 3rd party `focus-trap-react` for the focus-wrap feature.
+     * NOTE: by default this is true.
      */
     focusTrap: PropTypes.bool,
   };
@@ -161,21 +153,6 @@ export default class Modal extends Component {
     } = this.props;
     if (target && typeof target.closest === 'function') {
       return selectorsFloatingMenus.some(selector => target.closest(selector));
-    } else if (!breakingChangesX) {
-      // Alternative if closest does not exist.
-      while (target) {
-        if (typeof target[matchesFuncName] === 'function') {
-          if (
-            selectorsFloatingMenus.some(selector =>
-              target[matchesFuncName](selector)
-            )
-          ) {
-            return true;
-          }
-        }
-        target = target.parentNode;
-      }
-      return false;
     }
   };
 
@@ -306,19 +283,12 @@ export default class Modal extends Component {
         type="button"
         onClick={onRequestClose}
         title={iconDescription}
+        aria-label={iconDescription}
         ref={this.button}>
-        {componentsX ? (
-          <Close20
-            aria-label={iconDescription}
-            className={`${prefix}--modal-close__icon`}
-          />
-        ) : (
-          <Icon
-            icon={iconClose}
-            className={`${prefix}--modal-close__icon`}
-            description={iconDescription}
-          />
-        )}
+        <Close20
+          aria-label={iconDescription}
+          className={`${prefix}--modal-close__icon`}
+        />
       </button>
     );
 
@@ -332,21 +302,19 @@ export default class Modal extends Component {
         <div className={`${prefix}--modal-header`}>
           {passiveModal && modalButton}
           {modalLabel && (
-            <p className={`${prefix}--modal-header__label`}>{modalLabel}</p>
+            <h2 className={`${prefix}--modal-header__label`}>{modalLabel}</h2>
           )}
-          <p className={`${prefix}--modal-header__heading`}>{modalHeading}</p>
+          <h3 className={`${prefix}--modal-header__heading`}>{modalHeading}</h3>
           {!passiveModal && modalButton}
         </div>
         <div className={`${prefix}--modal-content`}>{this.props.children}</div>
         {!passiveModal && (
           <div className={`${prefix}--modal-footer`}>
-            <Button
-              kind={danger && !componentsX ? 'tertiary' : 'secondary'}
-              onClick={onSecondaryButtonClick}>
+            <Button kind="secondary" onClick={onSecondaryButtonClick}>
               {secondaryButtonText}
             </Button>
             <Button
-              kind={danger ? 'danger--primary' : 'primary'}
+              kind={danger ? 'danger' : 'primary'}
               disabled={primaryButtonDisabled}
               onClick={onRequestSubmit}
               inputref={this.button}>

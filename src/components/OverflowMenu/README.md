@@ -37,7 +37,7 @@ import { OverflowMenu, OverflowMenuItem } from 'carbon-components-react';
 You can then create the menu by the following:
 
 ```js
-<OverflowMenu floatingMenu>
+<OverflowMenu>
   <OverflowMenuItem itemText="Option 1" primaryFocus />
   <OverflowMenuItem itemText="Option 2" />
   ...
@@ -46,7 +46,14 @@ You can then create the menu by the following:
 
 There are two important React props:
 
-- `floatingMenu` in `OverflowMenu`: This is required if you want to out `OverflowMenu` in a table
 - `primaryFocus` in `OverflowMenuItem`: This is required for the menu item you put keyboard focus on when `OverflowMenu` gets open
 
 Please refer to [our Storybook](http://react.carbondesignsystem.com/?selectedKind=OverflowMenu&selectedStory=basic) for more details.
+
+## Note about `<OverflowMenu>` children
+
+Make sure the children of `<OverflowMenu>` are React components that accept `ref` as their children - Typically `<OverflowMenuItem>`. Otherwise, you'll get an error like:
+
+```
+Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+```

@@ -16,8 +16,11 @@ const props = {
   inline: () => ({
     light: boolean('Light variant (light)', false),
     feedback: text('Feedback text (feedback)', 'Feedback Enabled 👍'),
-    copyLabel: text('ARIA label of the copy button (copyLabel)', 'Copy Code'),
     onClick: action('onClick'),
+    copyLabel: text(
+      'ARIA label for the snippet/copy button (copyLabel)',
+      'copyable code snippet'
+    ),
   }),
   single: () => ({
     feedback: text('Feedback text (feedback)', 'Feedback Enabled 👍'),
@@ -140,14 +143,14 @@ $z-indexes: (
     'skeleton',
     () => (
       <div style={{ width: '800px' }}>
-        <CodeSnippetSkeleton type="single" style={{ paddingBottom: 8 }} />
+        <CodeSnippetSkeleton type="single" style={{ marginBottom: 8 }} />
         <CodeSnippetSkeleton type="multi" />
       </div>
     ),
     {
       info: {
         text: `
-          Placeholder skeleton state to
+          Placeholder skeleton state to use when content is loading.
         `,
       },
     }

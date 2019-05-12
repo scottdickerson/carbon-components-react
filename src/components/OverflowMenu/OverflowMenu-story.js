@@ -6,18 +6,12 @@
  */
 
 import React from 'react';
-import { settings } from 'carbon-components';
 import { storiesOf } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 import { withKnobs, boolean, select, text } from '@storybook/addon-knobs';
-import Add16 from '@carbon/icons-react/lib/add/16';
-import { iconAdd } from 'carbon-icons';
 import OverflowMenu from '../OverflowMenu';
 import OverflowMenuItem from '../OverflowMenuItem';
-import Icon from '../Icon';
-import { componentsX } from '../../internal/FeatureFlags';
 
-const { prefix } = settings;
 const directions = {
   'Bottom of the trigger button (bottom)': 'bottom',
   'Top of the trigger button (top)': 'top',
@@ -25,12 +19,7 @@ const directions = {
 
 const props = {
   menu: () => ({
-    floatingMenu: boolean('Floating menu (floatingMenu)', true),
-    direction: select(
-      'Menu direction (Only with `floatingMenu`) (direction)',
-      directions,
-      'bottom'
-    ),
+    direction: select('Menu direction (direction)', directions, 'bottom'),
     ariaLabel: text('ARIA label (ariaLabel)', ''),
     iconDescription: text('Icon description (iconDescription)', ''),
     flipped: boolean('Flipped (flipped)', false),
@@ -66,34 +55,6 @@ const OverflowMenuExample = ({ overflowMenuProps, overflowMenuItemProps }) => (
       />
       <OverflowMenuItem {...overflowMenuItemProps} itemText="Option 3" />
       <OverflowMenuItem {...overflowMenuItemProps} itemText="Option 4" />
-      <OverflowMenuItem
-        {...overflowMenuItemProps}
-        itemText={
-          <div
-            style={{
-              display: 'flex',
-              ...(componentsX
-                ? {}
-                : {
-                    justifyContent: 'space-between',
-                  }),
-            }}>
-            {componentsX ? (
-              <>
-                <div
-                  className={`${prefix}--overflow-menu-options__option-content`}>
-                  Add
-                </div>
-                <Add16 />
-              </>
-            ) : (
-              <>
-                Add <Icon icon={iconAdd} style={{ height: '12px' }} />
-              </>
-            )}
-          </div>
-        }
-      />
       <OverflowMenuItem
         {...overflowMenuItemProps}
         itemText="Danger option"

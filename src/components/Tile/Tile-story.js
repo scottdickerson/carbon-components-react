@@ -99,14 +99,14 @@ storiesOf('Tile', module)
     () => {
       const selectableProps = props.selectable();
       return (
-        <div>
+        <div role="group" aria-label="selectable tiles">
           <SelectableTile id="tile-1" name="tiles" {...selectableProps}>
             Multi-select Tile
           </SelectableTile>
-          <SelectableTile id="tile-1" name="tiles" {...selectableProps}>
+          <SelectableTile id="tile-2" name="tiles" {...selectableProps}>
             Multi-select Tile
           </SelectableTile>
-          <SelectableTile id="tile-1" name="tiles" {...selectableProps}>
+          <SelectableTile id="tile-3" name="tiles" {...selectableProps}>
             Multi-select Tile
           </SelectableTile>
         </div>

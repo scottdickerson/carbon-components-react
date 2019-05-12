@@ -10,9 +10,7 @@ import React from 'react';
 import iconAddSolid from '@carbon/icons-react/lib/add--filled/16';
 import Button from '../Button';
 
-const TableBatchAction = props => (
-  <Button small kind="ghost" renderIcon={iconAddSolid} {...props} />
-);
+const TableBatchAction = props => <Button {...props} />;
 
 TableBatchAction.propTypes = {
   /**
@@ -23,11 +21,12 @@ TableBatchAction.propTypes = {
   /**
    * Optional function to render your own icon in the underlying button
    */
-  renderIcon: PropTypes.func,
+  renderIcon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
 };
 
 TableBatchAction.defaultProps = {
   iconDescription: 'Add',
+  renderIcon: iconAddSolid,
 };
 
 export default TableBatchAction;

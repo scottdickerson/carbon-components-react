@@ -6,13 +6,11 @@
  */
 
 import React from 'react';
-import { iconSearch } from 'carbon-icons';
 import Search16 from '@carbon/icons-react/lib/search/16';
 import Button from '../Button';
 import Link from '../Link';
 import ButtonSkeleton from '../Button/Button.Skeleton';
 import { shallow, mount } from 'enzyme';
-import { componentsX } from '../../internal/FeatureFlags';
 
 describe('Button', () => {
   describe('Renders common props as expected', () => {
@@ -118,10 +116,7 @@ describe('Button', () => {
 
   describe('Renders icon buttons', () => {
     const iconButton = mount(
-      <Button
-        icon={!componentsX && iconSearch}
-        renderIcon={componentsX && Search16}
-        iconDescription="Search">
+      <Button renderIcon={Search16} iconDescription="Search">
         Search
       </Button>
     );
@@ -133,11 +128,11 @@ describe('Button', () => {
 
     it('should return error if icon given without description', () => {
       const props = {
-        icon: 'search',
+        renderIcon: Search16,
       };
       // eslint-disable-next-line quotes
       const error = new Error(
-        'icon/renderIcon property specified without also providing an iconDescription property.'
+        'renderIcon property specified without also providing an iconDescription property.'
       );
       expect(Button.propTypes.iconDescription(props)).toEqual(error);
     });
@@ -161,11 +156,11 @@ describe('Button', () => {
 
     it('should return error if icon given without description', () => {
       const props = {
-        icon: 'search',
+        renderIcon: Search16,
       };
       // eslint-disable-next-line quotes
       const error = new Error(
-        'icon/renderIcon property specified without also providing an iconDescription property.'
+        'renderIcon property specified without also providing an iconDescription property.'
       );
       expect(Button.propTypes.iconDescription(props)).toEqual(error);
     });

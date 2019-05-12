@@ -8,129 +8,117 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import { iconCaretDown } from 'carbon-icons';
 import { settings } from 'carbon-components';
-import Icon from '../Icon';
-import { componentsX } from '../../internal/FeatureFlags';
 import ChevronDownGlyph from '@carbon/icons-react/lib/chevron--down/index';
 import WarningFilled16 from '@carbon/icons-react/lib/warning--filled/16';
 
 const { prefix } = settings;
 
-const Select = React.forwardRef(
-  (
-    {
-      className,
-      id,
-      inline,
-      labelText,
-      disabled,
-      children,
-      iconDescription,
-      hideLabel,
-      invalid,
-      invalidText,
-      helperText,
-      light,
-      ...other
-    },
-    ref
-  ) => {
-    const selectClasses = classNames({
-      [`${prefix}--select`]: true,
-      [`${prefix}--select--inline`]: inline,
-      [`${prefix}--select--light`]: light,
-      [`${prefix}--select--invalid`]: invalid,
-      [className]: className,
-    });
-    const labelClasses = classNames(`${prefix}--label`, {
-      [`${prefix}--visually-hidden`]: hideLabel,
-      [`${prefix}--label--disabled`]: disabled,
-    });
-    const errorId = `${id}-error-msg`;
-    const error = invalid ? (
-      <div className={`${prefix}--form-requirement`} id={errorId}>
-        {invalidText}
-      </div>
-    ) : null;
-    const helperTextClasses = classNames(`${prefix}--form__helper-text`, {
-      [`${prefix}--form__helper-text--disabled`]: disabled,
-    });
-    const helper = helperText ? (
-      <div className={helperTextClasses}>{helperText}</div>
-    ) : null;
-    const ariaProps = {};
-    if (invalid) {
-      ariaProps['aria-describedby'] = errorId;
-    }
-    const input = (() => {
-      return (
-        <>
-          <select
-            {...other}
-            {...ariaProps}
-            id={id}
-            className={`${prefix}--select-input`}
-            disabled={disabled || undefined}
-            data-invalid={invalid || undefined}
-            aria-invalid={invalid || undefined}
-            ref={ref}>
-            {children}
-          </select>
-          {componentsX ? (
-            <ChevronDownGlyph
-              className={`${prefix}--select__arrow`}
-              aria-label={iconDescription}>
-              <title>{iconDescription}</title>
-            </ChevronDownGlyph>
-          ) : (
-            <Icon
-              icon={iconCaretDown}
-              className={`${prefix}--select__arrow`}
-              description={iconDescription}
-            />
-          )}
-          {componentsX && invalid && (
-            <WarningFilled16 className={`${prefix}--select__invalid-icon`} />
-          )}
-        </>
-      );
-    })();
+const Select = React.forwardRef(function Select(
+  {
+    className,
+    id,
+    inline,
+    labelText,
+    disabled,
+    children,
+    noLabel, // reserved for use with <Pagination> component
+    iconDescription,
+    hideLabel,
+    invalid,
+    invalidText,
+    helperText,
+    light,
+    ...other
+  },
+  ref
+) {
+  const selectClasses = classNames({
+    [`${prefix}--select`]: true,
+    [`${prefix}--select--inline`]: inline,
+    [`${prefix}--select--light`]: light,
+    [`${prefix}--select--invalid`]: invalid,
+    [className]: className,
+  });
+  const labelClasses = classNames(`${prefix}--label`, {
+    [`${prefix}--visually-hidden`]: hideLabel,
+    [`${prefix}--label--disabled`]: disabled,
+  });
+  const errorId = `${id}-error-msg`;
+  const error = invalid ? (
+    <div className={`${prefix}--form-requirement`} id={errorId}>
+      {invalidText}
+    </div>
+  ) : null;
+  const helperTextClasses = classNames(`${prefix}--form__helper-text`, {
+    [`${prefix}--form__helper-text--disabled`]: disabled,
+  });
+  const helper = helperText ? (
+    <div className={helperTextClasses}>{helperText}</div>
+  ) : null;
+  const ariaProps = {};
+  if (invalid) {
+    ariaProps['aria-describedby'] = errorId;
+  }
+  const input = (() => {
     return (
-      <div className={`${prefix}--form-item`}>
-        <div className={selectClasses}>
+      <>
+        <select
+          {...other}
+          {...ariaProps}
+          id={id}
+          className={`${prefix}--select-input`}
+          disabled={disabled || undefined}
+          data-invalid={invalid || undefined}
+          aria-invalid={invalid || undefined}
+          ref={ref}>
+          {children}
+        </select>
+        <ChevronDownGlyph
+          className={`${prefix}--select__arrow`}
+          aria-label={iconDescription}>
+          <title>{iconDescription}</title>
+        </ChevronDownGlyph>
+        {invalid && (
+          <WarningFilled16 className={`${prefix}--select__invalid-icon`} />
+        )}
+      </>
+    );
+  })();
+  return (
+    <div className={`${prefix}--form-item`}>
+      <div className={selectClasses}>
+        {!noLabel && (
           <label htmlFor={id} className={labelClasses}>
             {labelText}
           </label>
-          {!inline && helper}
-          {componentsX && inline && (
-            <>
-              <div className={`${prefix}--select-input--inline__wrapper`}>
-                <div
-                  className={`${prefix}--select-input__wrapper`}
-                  data-invalid={invalid || null}>
-                  {input}
-                </div>
-                {error}
+        )}
+        {!inline && helper}
+        {inline && (
+          <>
+            <div className={`${prefix}--select-input--inline__wrapper`}>
+              <div
+                className={`${prefix}--select-input__wrapper`}
+                data-invalid={invalid || null}>
+                {input}
               </div>
-              {helper}
-            </>
-          )}
-          {componentsX && !inline && (
-            <div
-              className={`${prefix}--select-input__wrapper`}
-              data-invalid={invalid || null}>
-              {input}
+              {error}
             </div>
-          )}
-          {!componentsX && input}
-          {!componentsX && inline && helper}
-          {(!componentsX || (componentsX && !inline)) && error}
-        </div>
+            {helper}
+          </>
+        )}
+        {!inline && (
+          <div
+            className={`${prefix}--select-input__wrapper`}
+            data-invalid={invalid || null}>
+            {input}
+          </div>
+        )}
+        {!inline && error}
       </div>
-    );
-  }
-);
+    </div>
+  );
+});
 
 Select.propTypes = {
   /**
@@ -204,6 +192,12 @@ Select.propTypes = {
    * Specify whether you want the light version of this control
    */
   light: PropTypes.bool,
+
+  /**
+   * Reserved for use with <Pagination> component. Will not render a label for the
+   * select since Pagination renders one for us.
+   */
+  noLabel: PropTypes.bool,
 };
 
 Select.defaultProps = {

@@ -7,17 +7,14 @@
 
 import React from 'react';
 import ChevronDownGlyph from '@carbon/icons-react/lib/chevron--down/index';
-import { iconCaretDown } from 'carbon-icons';
-import Icon from '../Icon';
 import Tabs from '../Tabs';
 import Tab from '../Tab';
 import TabsSkeleton from '../Tabs/Tabs.Skeleton';
 import { shallow, mount } from 'enzyme';
-import { componentsX } from '../../internal/FeatureFlags';
 
 describe('Tabs', () => {
   describe('renders as expected', () => {
-    describe('navigation (<nav>)', () => {
+    describe('navigation (<div>)', () => {
       const wrapper = shallow(
         <Tabs className="extra-class">
           <Tab label="firstTab">content1</Tab>
@@ -25,20 +22,25 @@ describe('Tabs', () => {
         </Tabs>
       );
 
-      it('renders [role="navigation"] props on <nav> by default', () => {
-        expect(wrapper.find('nav').props().role).toEqual('navigation');
+      it('renders [role="navigation"] props on wrapping <div> by default', () => {
+        expect(wrapper.find('.bx--tabs').props().role).toEqual('navigation');
       });
 
       it('renders [role="tablist"] props on <ul> by default', () => {
         expect(wrapper.find('ul').props().role).toEqual('tablist');
       });
 
-      it('renders extra classes on <nav> via className prop', () => {
-        expect(wrapper.find('nav').hasClass('extra-class')).toBe(true);
+      it('renders extra classes on wrapping <div> via className prop', () => {
+        expect(wrapper.find('.bx--tabs').hasClass('extra-class')).toBe(true);
       });
 
-      it('renders expected classes on <nav> by default', () => {
-        expect(wrapper.find('nav').hasClass('bx--tabs')).toBe(true);
+      it('renders expected classes on wrapping <div> by default', () => {
+        expect(
+          wrapper
+            .find('div')
+            .first()
+            .hasClass('bx--tabs')
+        ).toBe(true);
       });
     });
 
@@ -66,11 +68,7 @@ describe('Tabs', () => {
       });
 
       it('renders <Icon>', () => {
-        if (!componentsX) {
-          expect(trigger.find(Icon).props().icon).toEqual(iconCaretDown);
-        } else {
-          expect(trigger.find(ChevronDownGlyph).length).toBe(1);
-        }
+        expect(trigger.find(ChevronDownGlyph).length).toBe(1);
       });
     });
 

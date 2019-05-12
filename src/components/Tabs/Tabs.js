@@ -8,12 +8,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
-import { iconCaretDown } from 'carbon-icons';
 import ChevronDownGlyph from '@carbon/icons-react/lib/chevron--down/index';
 import { settings } from 'carbon-components';
-import Icon from '../Icon';
-import TabContent from '../TabContent';
-import { componentsX } from '../../internal/FeatureFlags';
 
 const { prefix } = settings;
 
@@ -115,9 +111,10 @@ export default class Tabs extends React.Component {
     return React.Children.map(this.props.children, tab => tab);
   }
 
-  getTabAt = index => {
+  getTabAt = (index, useFresh) => {
     return (
-      this[`tab${index}`] || React.Children.toArray(this.props.children)[index]
+      (!useFresh && this[`tab${index}`]) ||
+      React.Children.toArray(this.props.children)[index]
     );
   };
 
@@ -231,7 +228,7 @@ export default class Tabs extends React.Component {
     });
 
     const tabContentWithProps = React.Children.map(tabsWithProps, tab => {
-      const { children, selected } = tab.props;
+      const { children, selected, renderContent: TabContent } = tab.props;
 
       return (
         <TabContent
@@ -251,12 +248,12 @@ export default class Tabs extends React.Component {
       }),
     };
 
-    const selectedTab = this.getTabAt(this.state.selected);
+    const selectedTab = this.getTabAt(this.state.selected, true);
     const selectedLabel = selectedTab ? selectedTab.props.label : '';
 
     return (
       <>
-        <nav {...other} className={classes.tabs} role={role}>
+        <div {...other} className={classes.tabs} role={role}>
           <div
             role="listbox"
             aria-label={ariaLabel}
@@ -271,18 +268,14 @@ export default class Tabs extends React.Component {
               onClick={this.handleDropdownClick}>
               {selectedLabel}
             </a>
-            {componentsX ? (
-              <ChevronDownGlyph aria-hidden>
-                {iconDescription && <title>{iconDescription}</title>}
-              </ChevronDownGlyph>
-            ) : (
-              <Icon description={iconDescription} icon={iconCaretDown} />
-            )}
+            <ChevronDownGlyph aria-hidden>
+              {iconDescription && <title>{iconDescription}</title>}
+            </ChevronDownGlyph>
           </div>
           <ul role="tablist" className={classes.tablist}>
             {tabsWithProps}
           </ul>
-        </nav>
+        </div>
         {tabContentWithProps}
       </>
     );

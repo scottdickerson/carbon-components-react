@@ -21,7 +21,7 @@ exports[`ModalWrapper should render 1`] = `
     onKeyDown={[Function]}
     role="presentation"
   >
-    <ForwardRef
+    <ForwardRef(Button)
       className="btn-trigger"
       disabled={false}
       iconDescription="Provide icon description if icon is used"
@@ -40,7 +40,7 @@ exports[`ModalWrapper should render 1`] = `
       >
         Test Modal
       </button>
-    </ForwardRef>
+    </ForwardRef(Button)>
     <Modal
       focusTrap={true}
       iconDescription="close the modal"
@@ -84,17 +84,18 @@ exports[`ModalWrapper should render 1`] = `
             <div
               className="bx--modal-header"
             >
-              <p
+              <h2
                 className="bx--modal-header__label"
               >
                 Test Modal Label
-              </p>
-              <p
+              </h2>
+              <h3
                 className="bx--modal-header__heading"
               >
                 Transactional Modal
-              </p>
+              </h3>
               <button
+                aria-label="close the modal"
                 className="bx--modal-close"
                 onClick={[Function]}
                 title="close the modal"
@@ -144,7 +145,7 @@ exports[`ModalWrapper should render 1`] = `
             <div
               className="bx--modal-footer"
             >
-              <ForwardRef
+              <ForwardRef(Button)
                 disabled={false}
                 iconDescription="Provide icon description if icon is used"
                 kind="secondary"
@@ -162,13 +163,14 @@ exports[`ModalWrapper should render 1`] = `
                 >
                   Cancel
                 </button>
-              </ForwardRef>
-              <ForwardRef
+              </ForwardRef(Button)>
+              <ForwardRef(Button)
                 disabled={false}
                 iconDescription="Provide icon description if icon is used"
                 inputref={
                   Object {
                     "current": <button
+                      aria-label="close the modal"
                       class="bx--modal-close"
                       title="close the modal"
                       type="button"
@@ -200,13 +202,39 @@ exports[`ModalWrapper should render 1`] = `
                 <button
                   className="bx--btn bx--btn--primary"
                   disabled={false}
+                  inputref={
+                    Object {
+                      "current": <button
+                        aria-label="close the modal"
+                        class="bx--modal-close"
+                        title="close the modal"
+                        type="button"
+                      >
+                        <svg
+                          aria-label="close the modal"
+                          class="bx--modal-close__icon"
+                          focusable="false"
+                          height="20"
+                          preserveAspectRatio="xMidYMid meet"
+                          role="img"
+                          viewBox="0 0 32 32"
+                          width="20"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M24 9.4L22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6L24 9.4z"
+                          />
+                        </svg>
+                      </button>,
+                    }
+                  }
                   onClick={[Function]}
                   tabIndex={0}
                   type="button"
                 >
                   Save
                 </button>
-              </ForwardRef>
+              </ForwardRef(Button)>
             </div>
           </div>
         </div>

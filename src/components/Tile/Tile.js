@@ -9,13 +9,11 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import { iconCheckmarkSolid, iconChevronDown } from 'carbon-icons';
 import { settings } from 'carbon-components';
 import CheckmarkFilled from '@carbon/icons-react/lib/checkmark--filled/16';
 import ChevronDown16 from '@carbon/icons-react/lib/chevron--down/16';
-import { componentsX } from '../../internal/FeatureFlags';
-import Icon from '../Icon';
 import { keys, matches } from '../../tools/key';
+import uid from '../../tools/uniqueId';
 
 const { prefix } = settings;
 
@@ -295,13 +293,9 @@ export class SelectableTile extends Component {
           onClick={this.handleClick}
           onKeyDown={this.handleKeyDown}>
           <div className={`${prefix}--tile__checkmark`}>
-            {componentsX ? (
-              <CheckmarkFilled aria-label={iconDescription}>
-                {iconDescription && <title>{iconDescription}</title>}
-              </CheckmarkFilled>
-            ) : (
-              <Icon icon={iconCheckmarkSolid} description={iconDescription} />
-            )}
+            <CheckmarkFilled aria-label={iconDescription}>
+              {iconDescription && <title>{iconDescription}</title>}
+            </CheckmarkFilled>
           </div>
           <div className={`${prefix}--tile-content`}>{children}</div>
         </label>
@@ -343,6 +337,11 @@ export class ExpandableTile extends Component {
      * The description of the "expanded" icon that can be read by screen readers.
      */
     tileExpandedIconText: PropTypes.string,
+
+    /**
+     * An ID that can be provided to aria-labelledby
+     */
+    id: PropTypes.string,
   };
 
   static defaultProps = {
@@ -423,6 +422,9 @@ export class ExpandableTile extends Component {
     return React.Children.map(this.props.children, child => child);
   };
 
+  // a unique ID generated for use in aria-labelledby if one isn't providedj
+  uid = uid();
+
   render() {
     const {
       tabIndex,
@@ -453,6 +455,7 @@ export class ExpandableTile extends Component {
     const content = this.getChildren().map((child, index) => {
       return React.cloneElement(child, { ref: index });
     });
+    const buttonId = this.props.id ? `${this.props.id}__button` : this.uid;
     return (
       // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
       <div
@@ -464,35 +467,21 @@ export class ExpandableTile extends Component {
         {...other}
         onClick={this.handleClick}
         tabIndex={tabIndex}>
-        <button className={`${prefix}--tile__chevron`}>
-          {componentsX ? (
-            <ChevronDown16
-              aria-label={
-                this.state.expanded
-                  ? tileExpandedIconText
-                  : tileCollapsedIconText
-              }
-              alt={
-                this.state.expanded
-                  ? tileExpandedIconText
-                  : tileCollapsedIconText
-              }
-              description={
-                this.state.expanded
-                  ? tileExpandedIconText
-                  : tileCollapsedIconText
-              }
-            />
-          ) : (
-            <Icon
-              icon={iconChevronDown}
-              description={
-                this.state.expanded
-                  ? tileExpandedIconText
-                  : tileCollapsedIconText
-              }
-            />
-          )}
+        <button
+          className={`${prefix}--tile__chevron`}
+          aria-labelledby={buttonId}>
+          <ChevronDown16
+            id={buttonId}
+            aria-label={
+              this.state.expanded ? tileExpandedIconText : tileCollapsedIconText
+            }
+            alt={
+              this.state.expanded ? tileExpandedIconText : tileCollapsedIconText
+            }
+            description={
+              this.state.expanded ? tileExpandedIconText : tileCollapsedIconText
+            }
+          />
         </button>
         <div
           ref={tileContent => {

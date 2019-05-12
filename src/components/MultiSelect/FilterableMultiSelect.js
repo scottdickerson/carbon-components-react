@@ -11,6 +11,7 @@ import React from 'react';
 import Downshift from 'downshift';
 import isEqual from 'lodash.isequal';
 import { settings } from 'carbon-components';
+import WarningFilled16 from '@carbon/icons-react/lib/warning--filled/16';
 import ListBox from '../ListBox';
 import Checkbox from '../Checkbox';
 import Selection from '../../internal/Selection';
@@ -18,7 +19,6 @@ import { sortingPropTypes } from './MultiSelectPropTypes';
 import { defaultItemToString } from './tools/itemToString';
 import { defaultSortItems, defaultCompareItems } from './tools/sorting';
 import { defaultFilterItems } from '../ComboBox/tools/filter';
-import { componentsX } from '../../internal/FeatureFlags';
 
 const { prefix } = settings;
 
@@ -26,9 +26,19 @@ export default class FilterableMultiSelect extends React.Component {
   static propTypes = {
     ...sortingPropTypes,
     /**
+     * 'aria-label' of the ListBox component.
+     */
+    ariaLabel: PropTypes.string,
+
+    /**
      * Disable the control
      */
     disabled: PropTypes.bool,
+
+    /**
+     * Specify a custom `id`
+     */
+    id: PropTypes.string.isRequired,
 
     /**
      * We try to stay as generic as possible here to allow individuals to pass
@@ -68,6 +78,11 @@ export default class FilterableMultiSelect extends React.Component {
     placeholder: PropTypes.string.isRequired,
 
     /**
+     * Specify title to show title on hover
+     */
+    useTitleInItem: PropTypes.bool,
+
+    /**
      * `true` to use the light version.
      */
     light: PropTypes.bool,
@@ -86,6 +101,14 @@ export default class FilterableMultiSelect extends React.Component {
      * Initialize the component with an open(`true`)/closed(`false`) menu.
      */
     open: PropTypes.bool,
+
+    /**
+     * Specify feedback (mode) of the selection.
+     * `top`: selected item jumps to top
+     * `fixed`: selected item stays at it's position
+     * `top-after-reopen`: selected item jump to top after reopen dropdown
+     */
+    selectionFeedback: PropTypes.oneOf(['top', 'fixed', 'top-after-reopen']),
 
     /**
      * Callback function for translating ListBoxMenuIcon SVG title
@@ -107,6 +130,7 @@ export default class FilterableMultiSelect extends React.Component {
   }
 
   static defaultProps = {
+    ariaLabel: 'Choose an item',
     compareItems: defaultCompareItems,
     disabled: false,
     filterItems: defaultFilterItems,
@@ -116,6 +140,7 @@ export default class FilterableMultiSelect extends React.Component {
     sortItems: defaultSortItems,
     light: false,
     open: false,
+    selectionFeedback: 'top-after-reopen',
   };
 
   constructor(props) {
@@ -124,6 +149,7 @@ export default class FilterableMultiSelect extends React.Component {
       highlightedIndex: null,
       isOpen: props.open,
       inputValue: '',
+      topItems: [],
     };
   }
 
@@ -146,7 +172,11 @@ export default class FilterableMultiSelect extends React.Component {
     });
   };
 
-  handleOnStateChange = changes => {
+  handleOnStateChange = (changes, downshift) => {
+    if (changes.isOpen && !this.state.isOpen) {
+      this.setState({ topItems: downshift.selectedItem });
+    }
+
     const { type } = changes;
     switch (type) {
       case Downshift.stateChangeTypes.keyDownArrowUp:
@@ -212,11 +242,15 @@ export default class FilterableMultiSelect extends React.Component {
   render() {
     const { highlightedIndex, isOpen, inputValue } = this.state;
     const {
+      ariaLabel,
       className: containerClassName,
       disabled,
       filterItems,
       items,
       itemToString,
+      titleText,
+      helperText,
+      type,
       initialSelectedItems,
       id,
       locale,
@@ -226,17 +260,36 @@ export default class FilterableMultiSelect extends React.Component {
       light,
       invalid,
       invalidText,
+      useTitleInItem,
       translateWithId,
     } = this.props;
-    const className = cx(
-      `${prefix}--multi-select`,
-      `${prefix}--combo-box`,
-      containerClassName,
+    const inline = type === 'inline';
+    const wrapperClasses = cx(
+      `${prefix}--multi-select__wrapper`,
+      `${prefix}--list-box__wrapper`,
       {
-        [`${prefix}--list-box--light`]: light,
+        [`${prefix}--multi-select__wrapper--inline`]: inline,
+        [`${prefix}--list-box__wrapper--inline`]: inline,
+        [`${prefix}--multi-select__wrapper--inline--invalid`]:
+          inline && invalid,
+        [`${prefix}--list-box__wrapper--inline--invalid`]: inline && invalid,
       }
     );
-    return (
+    const titleClasses = cx(`${prefix}--label`, {
+      [`${prefix}--label--disabled`]: disabled,
+    });
+    const title = titleText ? (
+      <label htmlFor={id} className={titleClasses}>
+        {titleText}
+      </label>
+    ) : null;
+    const helperClasses = cx(`${prefix}--form__helper-text`, {
+      [`${prefix}--form__helper-text--disabled`]: disabled,
+    });
+    const helper = helperText ? (
+      <div className={helperClasses}>{helperText}</div>
+    ) : null;
+    const input = (
       <Selection
         onChange={this.handleOnChange}
         initialSelectedItems={initialSelectedItems}
@@ -259,107 +312,118 @@ export default class FilterableMultiSelect extends React.Component {
               isOpen,
               inputValue,
               selectedItem,
-            }) => (
-              <ListBox
-                className={className}
-                disabled={disabled}
-                invalid={invalid}
-                invalidText={invalidText}
-                innerTabIndex="-1"
-                {...getRootProps({ refKey: 'innerRef' })}>
-                <ListBox.Field {...getButtonProps({ disabled })}>
-                  {selectedItem.length > 0 && (
-                    <ListBox.Selection
-                      clearSelection={clearSelection}
-                      selectionCount={selectedItem.length}
+            }) => {
+              const className = cx(
+                `${prefix}--multi-select`,
+                `${prefix}--combo-box`,
+                `${prefix}--multi-select--filterable`,
+                containerClassName,
+                {
+                  [`${prefix}--multi-select--invalid`]: invalid,
+                  [`${prefix}--multi-select--open`]: isOpen,
+                  [`${prefix}--multi-select--inline`]: inline,
+                  [`${prefix}--multi-select--selected`]:
+                    selectedItem.length > 0,
+                }
+              );
+              return (
+                <ListBox
+                  className={className}
+                  disabled={disabled}
+                  light={light}
+                  invalid={invalid}
+                  invalidText={invalidText}
+                  isOpen={isOpen}
+                  {...getRootProps({ refKey: 'innerRef' })}>
+                  {invalid && (
+                    <WarningFilled16
+                      className={`${prefix}--list-box__invalid-icon`}
                     />
                   )}
-                  <input
-                    className={`${prefix}--text-input`}
-                    ref={el => (this.inputNode = el)}
-                    {...getInputProps({
-                      disabled,
-                      id,
-                      placeholder,
-                      onKeyDown: this.handleOnInputKeyDown,
-                    })}
-                  />
-                  {inputValue && isOpen && (
-                    <ListBox.Selection clearSelection={this.clearInputValue} />
+                  <ListBox.Field id={id} {...getButtonProps({ disabled })}>
+                    {selectedItem.length > 0 && (
+                      <ListBox.Selection
+                        clearSelection={clearSelection}
+                        selectionCount={selectedItem.length}
+                        translateWithId={translateWithId}
+                      />
+                    )}
+                    <input
+                      className={`${prefix}--text-input`}
+                      aria-controls={`${id}__menu`}
+                      aria-autocomplete="list"
+                      ref={el => (this.inputNode = el)}
+                      {...getInputProps({
+                        disabled,
+                        id,
+                        placeholder,
+                        onKeyDown: this.handleOnInputKeyDown,
+                      })}
+                    />
+                    {inputValue && isOpen && (
+                      <ListBox.Selection
+                        clearSelection={this.clearInputValue}
+                      />
+                    )}
+                    <ListBox.MenuIcon
+                      isOpen={isOpen}
+                      translateWithId={translateWithId}
+                    />
+                  </ListBox.Field>
+                  {isOpen && (
+                    <ListBox.Menu aria-label={ariaLabel} id={id}>
+                      {sortItems(
+                        filterItems(items, { itemToString, inputValue }),
+                        {
+                          selectedItems: {
+                            top: selectedItems,
+                            fixed: [],
+                            'top-after-reopen': this.state.topItems,
+                          }[this.props.selectionFeedback],
+                          itemToString,
+                          compareItems,
+                          locale,
+                        }
+                      ).map((item, index) => {
+                        const itemProps = getItemProps({ item });
+                        const itemText = itemToString(item);
+                        const isChecked =
+                          selectedItem.filter(selected =>
+                            isEqual(selected, item)
+                          ).length > 0;
+                        return (
+                          <ListBox.MenuItem
+                            key={itemProps.id}
+                            isActive={isChecked}
+                            isHighlighted={highlightedIndex === index}
+                            {...itemProps}>
+                            <Checkbox
+                              id={itemProps.id}
+                              title={useTitleInItem ? itemText : null}
+                              name={itemText}
+                              checked={isChecked}
+                              readOnly={true}
+                              tabIndex="-1"
+                              labelText={itemText}
+                            />
+                          </ListBox.MenuItem>
+                        );
+                      })}
+                    </ListBox.Menu>
                   )}
-                  <ListBox.MenuIcon
-                    isOpen={isOpen}
-                    translateWithId={translateWithId}
-                  />
-                </ListBox.Field>
-                {isOpen && (
-                  <ListBox.Menu>
-                    {componentsX
-                      ? filterItems(items, { itemToString, inputValue }).map(
-                          (item, index) => {
-                            const itemProps = getItemProps({ item });
-                            const itemText = itemToString(item);
-                            const isChecked =
-                              selectedItem.filter(selected =>
-                                isEqual(selected, item)
-                              ).length > 0;
-                            return (
-                              <ListBox.MenuItem
-                                key={itemProps.id}
-                                isActive={isChecked}
-                                isHighlighted={highlightedIndex === index}
-                                {...itemProps}>
-                                <Checkbox
-                                  id={itemProps.id}
-                                  name={itemText}
-                                  checked={isChecked}
-                                  readOnly={true}
-                                  tabIndex="-1"
-                                  labelText={itemText}
-                                />
-                              </ListBox.MenuItem>
-                            );
-                          }
-                        )
-                      : sortItems(
-                          filterItems(items, { itemToString, inputValue }),
-                          {
-                            selectedItems,
-                            itemToString,
-                            compareItems,
-                            locale,
-                          }
-                        ).map((item, index) => {
-                          const itemProps = getItemProps({ item });
-                          const itemText = itemToString(item);
-                          const isChecked =
-                            selectedItem.filter(selected =>
-                              isEqual(selected, item)
-                            ).length > 0;
-                          return (
-                            <ListBox.MenuItem
-                              key={itemProps.id}
-                              isActive={isChecked}
-                              isHighlighted={highlightedIndex === index}
-                              {...itemProps}>
-                              <Checkbox
-                                id={itemProps.id}
-                                name={itemText}
-                                checked={isChecked}
-                                readOnly={true}
-                                tabIndex="-1"
-                                labelText={itemText}
-                              />
-                            </ListBox.MenuItem>
-                          );
-                        })}
-                  </ListBox.Menu>
-                )}
-              </ListBox>
-            )}
+                </ListBox>
+              );
+            }}
           />
         )}
       />
+    );
+    return (
+      <div className={wrapperClasses}>
+        {title}
+        {!inline && helper}
+        {input}
+      </div>
     );
   }
 }

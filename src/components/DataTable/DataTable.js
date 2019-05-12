@@ -59,6 +59,9 @@ export default class DataTable extends React.Component {
     rows: PropTypes.arrayOf(
       PropTypes.shape({
         id: PropTypes.string.isRequired,
+        disabled: PropTypes.bool,
+        isSelected: PropTypes.bool,
+        isExpanded: PropTypes.bool,
       })
     ).isRequired,
 
@@ -99,16 +102,6 @@ export default class DataTable extends React.Component {
     translateWithId: PropTypes.func,
 
     /**
-     * Optional boolean to create a short data table.
-     */
-    short: PropTypes.bool,
-
-    /**
-     * Optional boolean to remove borders from data table.
-     */
-    shouldShowBorder: PropTypes.bool,
-
-    /**
      * Specify whether the control should be a radio button or inline checkbox
      */
     radio: PropTypes.bool,
@@ -119,8 +112,6 @@ export default class DataTable extends React.Component {
     filterRows: defaultFilterRows,
     locale: 'en',
     translateWithId,
-    short: false,
-    shouldShowBorder: true,
   };
 
   static translationKeys = Object.values(translationKeys);
@@ -163,7 +154,12 @@ export default class DataTable extends React.Component {
    * @param {Function} config.onClick a custom click handler for the header
    * @returns {Object}
    */
-  getHeaderProps = ({ header, onClick, isSortable = true, ...rest }) => {
+  getHeaderProps = ({
+    header,
+    onClick,
+    isSortable = this.props.isSortable,
+    ...rest
+  }) => {
     const { sortDirection, sortHeaderKey } = this.state;
     return {
       ...rest,
@@ -218,6 +214,7 @@ export default class DataTable extends React.Component {
       isExpanded: row.isExpanded,
       ariaLabel: t(translationKey),
       isSelected: row.isSelected,
+      disabled: row.disabled,
     };
   };
 
@@ -247,6 +244,7 @@ export default class DataTable extends React.Component {
         id: `${this.getTablePrefix()}__select-row-${row.id}`,
         name: `select-row-${row.id}`,
         ariaLabel: t(translationKey),
+        disabled: row.disabled,
         radio: this.props.radio || null,
       };
     }
@@ -287,9 +285,18 @@ export default class DataTable extends React.Component {
    * Helper utility to get the Table Props.
    */
   getTableProps = () => {
-    const { short, shouldShowBorder } = this.props;
+    const {
+      useZebraStyles,
+      size,
+      isSortable,
+      useStaticWidth,
+      shouldShowBorder,
+    } = this.props;
     return {
-      short,
+      useZebraStyles,
+      size,
+      isSortable,
+      useStaticWidth,
       shouldShowBorder,
     };
   };
@@ -326,7 +333,7 @@ export default class DataTable extends React.Component {
           ...acc,
           [id]: {
             ...initialState.rowsById[id],
-            isSelected,
+            isSelected: initialState.rowsById[id].disabled ? false : isSelected,
           },
         }),
         {}
@@ -352,8 +359,11 @@ export default class DataTable extends React.Component {
    */
   handleSelectAll = () => {
     this.setState(state => {
-      const { rowIds } = state;
-      const isSelected = this.getSelectedRows().length !== rowIds.length;
+      const { rowIds, rowsById } = state;
+      const selectableRows = rowIds.reduce((acc, rowId) => {
+        return (acc += rowsById[rowId].disabled ? 0 : 1);
+      }, 0);
+      const isSelected = this.getSelectedRows().length !== selectableRows;
       return {
         shouldShowBatchActions: isSelected,
         ...this.setAllSelectedState(state, isSelected),
@@ -453,7 +463,9 @@ export default class DataTable extends React.Component {
    * @param {Event} event
    */
   handleOnInputValueChange = event => {
-    this.setState({ filterInputValue: event.target.value });
+    if (event.currentTarget) {
+      this.setState({ filterInputValue: event.currentTarget.value });
+    }
   };
 
   render() {

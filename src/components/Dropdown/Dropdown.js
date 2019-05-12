@@ -12,7 +12,6 @@ import React from 'react';
 import { settings } from 'carbon-components';
 import WarningFilled16 from '@carbon/icons-react/lib/warning--filled/16';
 import ListBox, { PropTypes as ListBoxPropTypes } from '../ListBox';
-import { componentsX } from '../../internal/FeatureFlags';
 
 const { prefix } = settings;
 
@@ -45,6 +44,11 @@ export default class Dropdown extends React.Component {
       PropTypes.object,
       PropTypes.string,
     ]),
+
+    /**
+     * Specify a custom `id`
+     */
+    id: PropTypes.string.isRequired,
 
     /**
      * Specify whether you want the inline version of this control
@@ -85,6 +89,11 @@ export default class Dropdown extends React.Component {
      * this field is for
      */
     label: PropTypes.node.isRequired,
+
+    /**
+     * Callback function for translating ListBoxMenuIcon SVG title
+     */
+    translateWithId: PropTypes.func,
 
     /**
      * 'aria-label' of the ListBox component.
@@ -150,6 +159,7 @@ export default class Dropdown extends React.Component {
       id,
       titleText,
       helperText,
+      translateWithId,
       light,
       invalid,
       invalidText,
@@ -190,12 +200,11 @@ export default class Dropdown extends React.Component {
 
     // needs to be Capitalized for react to render it correctly
     const ItemToElement = itemToElement;
-    const Dropdown = (
-      <>
+    return (
+      <div className={wrapperClasses}>
         {title}
         {!inline && helper}
         <Downshift
-          id={id}
           onChange={this.handleOnChange}
           itemToString={itemToString}
           defaultSelectedItem={initialSelectedItem}
@@ -211,29 +220,35 @@ export default class Dropdown extends React.Component {
             getLabelProps,
           }) => (
             <ListBox
+              id={id}
               type={type}
               className={className({ isOpen })}
               disabled={disabled}
-              ariaLabel={ariaLabel}
               isOpen={isOpen}
               invalid={invalid}
               invalidText={invalidText}
               {...getRootProps({ refKey: 'innerRef' })}>
-              {componentsX && invalid && (
+              {invalid && (
                 <WarningFilled16
                   className={`${prefix}--list-box__invalid-icon`}
                 />
               )}
-              <ListBox.Field {...getButtonProps({ disabled })}>
+              <ListBox.Field
+                id={id}
+                tabIndex="0"
+                {...getButtonProps({ disabled })}>
                 <span
                   className={`${prefix}--list-box__label`}
                   {...getLabelProps()}>
                   {selectedItem ? itemToString(selectedItem) : label}
                 </span>
-                <ListBox.MenuIcon isOpen={isOpen} />
+                <ListBox.MenuIcon
+                  isOpen={isOpen}
+                  translateWithId={translateWithId}
+                />
               </ListBox.Field>
               {isOpen && (
-                <ListBox.Menu>
+                <ListBox.Menu aria-label={ariaLabel} id={id}>
                   {items.map((item, index) => (
                     <ListBox.MenuItem
                       key={itemToString(item)}
@@ -254,12 +269,7 @@ export default class Dropdown extends React.Component {
             </ListBox>
           )}
         </Downshift>
-      </>
-    );
-    return componentsX ? (
-      <div className={wrapperClasses}>{Dropdown}</div>
-    ) : (
-      Dropdown
+      </div>
     );
   }
 }
